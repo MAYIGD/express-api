@@ -4,8 +4,18 @@ const jwt = require('jsonwebtoken')
 const passport = require('passport')
 const multer = require('multer');
 const fs = require('fs');
-const UPLOAD_PATH = '../uploads'
-const upload = multer({ dest: UPLOAD_PATH })
+const UPLOAD_PATH = './uploads'
+const storage = multer.diskStorage({
+    destination: function (req, file, callback) {
+        callback(null, './uploads');
+    },
+    filename: function (req, file, callback) {
+        // console.log(file)
+        const array = file.originalname.split('.')
+        const ext = array[array.length-1]
+        callback(null, Date.now()+"."+ext);
+    }
+});
 
 const User = require("../models/User")
 const Post = require("../models/Post")
@@ -155,16 +165,14 @@ router.get("/:id", passport.authenticate("jwt", { session: false }), (request, r
         })
 })
 
-router.post('/upload', upload.single('fileUpload'), function (req, res, next) {
-    const { file } = req
-    fs.readFile(file.path, function (err, data) {
-        fs.writeFile(`${UPLOAD_PATH}/${file.originalname}`, data, function (err) {
-            if (err) res.json({ err })
-            res.json({
-                msg: '上傳成功'
-            });
-        });
-    })
+router.post('/upload', function (req, res, next) {
+    var upload = multer({ storage : storage}).single('fileUpload');
+    upload(req,res,function(err) {
+        if(err) {
+            return res.end("Error uploading file.");
+        }
+        res.end("File is uploaded  "+req.file.filename);
+    });
 })
 
 
