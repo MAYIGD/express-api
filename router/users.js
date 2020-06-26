@@ -1,5 +1,8 @@
 const express = require("express")
+const bcrypt = require("bcrypt")
+
 const User = require("../models/User")
+const { request } = require("express")
 const router = express.Router()
 const users = [
     {
@@ -22,31 +25,40 @@ router.get("/", (request, response) => {
 })
 router.get("/:id", (request, response) => {
     const id = request.params.id
-    let usr = users.find(user=>user.id == id)
+    let usr = users.find(user => user.id == id)
     response.json(usr)
 })
 router.post("/register", (request, response) => {
     User.findOne({
-        mail:request.body.mail
-    }).then((user)=>{
-        if(user){
+        mail: request.body.mail
+    }).then((user) => {
+        if (user) {
             response.json({
-                error:"你註冊過了"
+                error: "你註冊過了"
             })
         }
-        else{
+        else {
             const newUser = new User({
-                name:request.body.name,
-                password:request.body.password,
-                mail:request.body.mail
+                name: request.body.name,
+                password: request.body.password,
+                mail: request.body.mail
             })
-            newUser.save()
-            .then((user)=>{
-                response.json(user)
+            bcrypt.hash(newUser.password, 10, (error, hash) => {
+                if (error) {
+                    throw error
+                }
+                else {
+                    newUser.password = hash
+                    newUser.save()
+                        .then((user) => {
+                            response.json(user)
+                        })
+                        .catch((error) => {
+                            response.json(error)
+                        })
+                }
             })
-            .catch((error)=>{
-                response.json(error)
-            })
+
         }
     })
 })
