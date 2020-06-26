@@ -2,32 +2,18 @@ const express = require("express")
 const bcrypt = require("bcrypt")
 
 const User = require("../models/User")
-const { request } = require("express")
 const router = express.Router()
-const users = [
-    {
-        id: 1,
-        user: "MAY"
-    },
-    {
-        id: 2,
-        user: "MAY2"
-    },
-    {
-        id: 3,
-        user: "MAY3"
-    }
-]
-router.get("/", (request, response) => {
-    response.json({
-        user: "MAY"
-    })
-})
-router.get("/:id", (request, response) => {
-    const id = request.params.id
-    let usr = users.find(user => user.id == id)
-    response.json(usr)
-})
+// router.get("/", (request, response) => {
+//     response.json({
+//         user: "MAY"
+//     })
+// })
+// router.get("/:id", (request, response) => {
+//     const id = request.params.id
+//     let usr = users.find(user => user.id == id)
+//     response.json(usr)
+// })
+
 router.post("/register", (request, response) => {
     User.findOne({
         mail: request.body.mail
@@ -62,4 +48,32 @@ router.post("/register", (request, response) => {
         }
     })
 })
+
+router.post("/login", (request, response) => {
+    User.findOne({
+        mail: request.body.mail
+    }).then((user) => {
+        if (user) {
+            bcrypt.compare(request.body.password, user.password)
+            .then((result)=>{
+                if(result){
+                    response.json(user)
+                }
+                else{
+                    response.json({
+                        error: "密碼錯誤"
+                    })
+                }
+            })
+        }
+        else {
+
+            response.json({
+                error: "你應該先註冊"
+            })
+        }
+    })
+})
+
+
 module.exports = router
